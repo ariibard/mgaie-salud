@@ -311,6 +311,10 @@ proyecciones_depto$ano = str_replace_all(proyecciones_depto$ano,"a_","") # elimi
 
 instalar("DT")
 DT::datatable(proyecciones_depto)
+
+#Guardo archivos
+writexl::write_xlsx(proyecciones_depto, "resultado/proyecciones_depto_indec.xlsx")
+write.csv(proyecciones_depto, "resultado/proyecciones_depto_indec.csv", row.names = F, fileEncoding = "UTF-8")
 ```
 
 ## Conclusiones
