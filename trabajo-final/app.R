@@ -12,9 +12,18 @@ setwd("C:/Users/Usuario/Documents/GitHub/01. Activos/mgaie-salud/trabajo-final")
 cobertura_salud <- read_excel("data/cobertura_salud.xlsx", 
                               sheet = "base_util")
 
+# Traigo la cascara del mapa
+mapa_caba <- get_geo("CABA", level = "departamento") |>
+  mutate(comuna = sub("^0+", "", coddepto_censo))
+
+# Uno
+mapa_caba <- mapa_caba |> 
+  left_join(cobertura_salud)
+
+
 ui <- fluidPage(
   
-  theme = shinytheme("flatly"), 
+  theme = shinytheme("yeti"), 
   
   titlePanel("Cobertura de Salud en Ciudad de Buenos Aires"),
   
@@ -31,6 +40,7 @@ ui <- fluidPage(
             <li><strong>Mapa:</strong> Visualiza la cobertura de salud en un mapa interactivo.</li>
             <li><strong>Tendencia:</strong> Examina la tendencia de la cobertura de salud a lo largo de varios años y para diferentes géneros.</li>
             <li><strong>Resumen de Datos:</strong> Obtiene un resumen estadístico de los datos disponibles.</li>
+             <li><strong>Fuente:</strong> Elaboración propia en base a Datos Abiertos del GCBA.</li>
           </ul>")
                       )
                )
@@ -41,12 +51,13 @@ ui <- fluidPage(
                sidebarPanel(
                  # Controles de filtro para el mapa
                  selectInput("map_year", "Seleccionar Año", choices = unique(cobertura_salud$ano)),
-                 selectInput("map_gender", "Seleccionar Sexo", choices = unique(cobertura_salud$sexo))
-                 # Otros filtros relacionados con el mapa
+                 selectInput("map_gender", "Seleccionar Sexo", choices = unique(cobertura_salud$sexo)),
+                 selectInput("map_cobertura", "Seleccionar tipo de cobertura", choices = unique(cobertura_salud$tipo_cobertura))
+                 
                ),
                mainPanel(
                  # Mapa de CABA
-                 plotOutput("healthMap")
+                 plotlyOutput("plot_mapa")
                )
              )
     ),
@@ -78,13 +89,72 @@ ui <- fluidPage(
                  dataTableOutput("summaryTable")
                )
              )
-    )
-  )
+    ),
+    fluidRow(
+      column(
+        width = 12,
+        style = "text-align: right; padding-top: 100px; font-size: 16px;",
+        HTML("Desarrollado por <b><a href='https://www.linkedin.com/in/ariana-bardauil/' target='_blank'>Ariana Bardauil</a></b>")
+      )
+      )
 )
+)
+
 
 
 server <- function(input, output) {
   
+  # Crear un objeto reactivo para el mapa
+  output$plot_mapa <- renderPlotly({
+    
+    # Filtro
+    mapa_filtrado <- mapa_caba %>%
+      filter(ano ==  input$map_year &
+               sexo == input$map_gender &
+               tipo_cobertura == input$map_cobertura)
+    
+
+    # Grafico
+    plot_mapa <- ggplot(mapa_filtrado) +
+      geom_sf(aes(
+        fill = porcentaje,
+        text = paste(
+          "Comuna:",
+          comuna,
+          "<br>Porcentaje:",
+          porcentaje,
+          "%",
+          "\nTipo de Cobertura:",
+          tipo_cobertura
+        )
+      )) +
+      scale_fill_viridis_c(option = "plasma",
+                           direction = -1,
+                           labels = percent_format(scale = 1)) +
+      ggthemes::theme_pander() +
+      labs(
+        title = paste(
+          "Población",
+          input$map_gender,
+          "por cobertura de salud:",
+          input$map_cobertura,
+          "en",
+          input$map_year
+        ),
+        fill = "Porcentaje"
+      ) +
+      theme(
+        plot.title = element_text(size = 16L, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 14L, face = "italic", hjust = 0.5),
+        text = element_text(size = 12)
+      ) +
+      ylab("") +
+      xlab("")
+    
+    ggplotly(plot_mapa, tooltip = "text") 
+    
+    
+  })
 }
 
 shinyApp(ui = ui, server = server)
