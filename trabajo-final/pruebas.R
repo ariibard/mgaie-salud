@@ -35,3 +35,68 @@ mapa_interactivo <- ggplot(mapa_filtrado) +
   xlab("") 
 
 ggplotly(mapa_interactivo, tooltip = "text")
+
+
+################### TENDENCIA ###################################33
+
+grafico_tendencia <- cobertura_salud |> 
+  filter(comuna == "Total" & tipo_cobertura != "Ns/Nc") 
+
+esquisse::esquisser(grafico_tendencia)
+
+
+library(RColorBrewer)
+ggplot(grafico_tendencia) +
+  aes(x = ano, y = porcentaje, colour = tipo_cobertura) +
+  geom_line() +
+  geom_point() +
+  scale_colour_brewer(palette = "Dark2") +
+  labs(
+    title = "Cobertura de salud de CABA a través del tiempo",
+    color = "Tipo de cobertura"
+  ) +
+  ggthemes::theme_pander() +
+  theme(
+    plot.title = element_text(size = 17L,
+                              face = "bold",
+                              hjust = 0.5)
+  )
+
+library(highcharter)
+
+grafico_tendencia <- grafico_tendencia %>%
+  hchart(
+    type = "line",
+    hcaes(x = ano, y = porcentaje, group = tipo_cobertura)
+  ) %>%
+  hc_plotOptions(series = list(dataLabels = list(enabled = TRUE))) %>%
+  hc_title(text = "Cobertura de salud de CABA a través del tiempo") %>%
+  hc_xAxis(title = list(text = "Año")) %>%
+  hc_yAxis(title = list(text = "Porcentaje")) %>%
+  hc_legend(title = list(text = "Tipo de cobertura"))
+
+# Mostrar el gráfico
+grafico_tendencia
+
+############################ DT ############################################
+
+
+library(gt)
+
+tabla <- cobertura_salud |> 
+  filter(ano == '2022' & sexo == 'Total') |> 
+  mutate(orden = as.numeric(ifelse(comuna == 'Total', '16', comuna)),
+         porcentaje = ifelse(is.na(porcentaje), "-", paste0(porcentaje,"%"))) |> 
+  pivot_wider(names_from = tipo_cobertura,values_from = porcentaje) |> 
+  arrange(orden) |> 
+  select(-orden,-sexo,-ano) |> 
+  rename("Comuna" = comuna)
+
+
+tabla |> 
+  gt()  %>%
+  tab_header(
+    title = "Cobertura de Salud en Ciudad de Buenos Aires",
+    subtitle = "Datos de cobertura de salud por comuna en 2022",
+    # Puedes agregar otras opciones de formato aquí
+  ) 
