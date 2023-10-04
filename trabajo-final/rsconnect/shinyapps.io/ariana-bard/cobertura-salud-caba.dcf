@@ -1,0 +1,13 @@
+name: cobertura-salud-caba
+title: cobertura-salud-caba
+username: ariana-bard
+account: ariana-bard
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10070398
+bundleId: 7759526
+url: https://ariana-bard.shinyapps.io/cobertura-salud-caba/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data/S_148.xlsx|modificacion-base.R|pruebas.R|tabla_resumen.csv
